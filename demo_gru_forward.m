@@ -1,0 +1,94 @@
+%% GRU Forward Pass Demo
+% Simple demonstration of GRU network forward propagation
+
+clear; clc;
+addpath("functions");
+
+dataFile   = "silverbox_data.mat";
+modelFile1 = "models/GRU_model_1layer.json";
+modelFile3 = "models/GRU_model_3layer.json";
+
+%% Load data (X: [T x input_dim], Y: [T x output_dim])
+data = load(dataFile);
+X = data.X; % inputs
+Y = data.Y; % ground truth
+
+numTimesteps = size(X, 1);
+
+%% ===================== GRU with 1 layer =====================
+%% Load model (JSON)
+model1 = jsondecode(fileread(modelFile1));
+
+mean1 = model1.meta.norm.mean;
+std1  = model1.meta.norm.std;
+
+%% Preallocate outputs and initialize hidden state
+Y_pred_1 = zeros(numTimesteps, model1.meta.output_size);
+h1       = zeros(model1.meta.hidden_size, 1);
+
+%% Forward pass through time
+for k = 1:numTimesteps
+    % Current input as column vector [input_dim, 1]
+    xk = X(k, :).';
+
+    % Normalize input
+    xk = fcn_normalize(xk, mean1, std1, 0);
+
+    % 1-layer GRU forward step
+    [yk, h1] = nn_gru_1_layer(xk, h1, model1.weights);
+
+    % Store prediction
+    Y_pred_1(k, :) = yk.';
+end
+
+%% ===================== GRU with 3 layers =====================
+%% Load model (JSON)
+model3 = jsondecode(fileread(modelFile3));
+
+mean3 = model3.meta.norm.mean;
+std3  = model3.meta.norm.std;
+
+%% Preallocate outputs and initialize hidden state
+Y_pred_3 = zeros(numTimesteps, model3.meta.output_size);
+h3       = zeros(model3.meta.hidden_size, 1);
+
+%% Forward pass through time
+for k = 1:numTimesteps
+    % Current input as column vector [input_dim, 1]
+    xk = X(k, :).';
+
+    % Normalize input
+    xk = fcn_normalize(xk, mean3, std3, 0);
+
+    % 3-layer GRU forward step
+    [yk, h3] = nn_gru_n_layer(xk, h3, model3.weights);
+
+    % Store prediction
+    Y_pred_3(k, :) = yk.';
+end
+
+%% Plot results
+plotStart = 1;
+plotEnd   = min(500, numTimesteps);
+
+t = plotStart:plotEnd;
+
+figure("Name","GRU Forward Pass Demo");
+
+% --- Top subplot: outputs ---
+subplot(2,1,1);
+plot(t, Y(t,:), "k", "LineWidth", 1.5); hold on;
+plot(t, Y_pred_1(t,:), "--", "LineWidth", 1.5);
+plot(t, Y_pred_3(t,:), ":", "LineWidth", 1.5);
+legend("Ground Truth", "GRU 1 Layer", "GRU 3 Layer", "Location", "best");
+ylabel("Output");
+title("Predictions vs Ground Truth");
+grid on;
+
+% --- Bottom subplot: inputs ---
+subplot(2,1,2);
+plot(t, X(t,:), "LineWidth", 1.0);
+xlabel("Time Step");
+ylabel("Input");
+title("Input Signals");
+grid on;

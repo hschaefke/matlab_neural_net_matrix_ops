@@ -1,41 +1,35 @@
-function [x_k_plus_1, h_k] = nn_fnn_1_layer(x_k, fnn_weights) %#codegen
-% Computes the forward pass of a simple 1-layer feedforward neural network
-% (fully-connected layer + activation + linear output layer) using only
-% matrix operations. This implementation is intended for use with trained
-% weights exported from Python and is toolbox-free, making it suitable for
-% nonlinear MPC, embedded deployment, or low-level analysis.
+function y_k = nn_fnn_1_layer(x_k, fnn_weights)
+% Computes the forward pass of a single-hidden-layer feedforward neural
+% network (FNN) using only matrix operations.
 %
 % INPUTS:
-%   x_k         : Input vector at time step k        [input_dim, 1]
-%   fnn_weights : Struct containing all FNN parameters with fields:
+%   x_k         : Input at time step k  [input_dim, 1]
+%   fnn_weights : Struct containing all FNN parameters with the fields:
 %
-%       Hidden layer:
-%           w_hidden : Weights [hidden_dim, input_dim]
-%           b_hidden : Bias    [hidden_dim, 1]
+%       Hidden Layer:
+%           linear_0_weight : [hidden_dim, input_dim]
+%           linear_0_bias   : [hidden_dim, 1]
 %
-%       Linear output layer:
-%           weight_linout : Weights [output_dim, hidden_dim]
-%           bias_linout   : Bias    [output_dim, 1]
+%       Output Layer:
+%           linear_1_weight : [output_dim, hidden_dim]
+%           linear_1_bias   : [output_dim, 1]
 %
 % OUTPUTS:
-%   x_k_plus_1 : Network output                      [output_dim, 1]
-%   h_k        : Hidden layer activation             [hidden_dim, 1]
+%   y_k : Network output at time step k           [output_dim, 1]
 %
 % -------------------------------------------------------------------------
 
-    w = fnn_weights;  % Shortcut for readability
+    w = fnn_weights; % Shortcut to improve readability
 
-    %% ----- Hidden Layer -------------------------------------------------
-    % Here we use tanh as activation function.
-    % You can switch to ReLU or another activation if required.
-    %
-    %   h_k = tanh(W_hidden * x_k + b_hidden)
-    h_k = tanh( w.w_hidden * x_k + w.b_hidden' );
+    %% ----- Hidden Layer ------------------------------------------------
+    % a_0 = W0*x + b0
+    a0 = w.linear_0_weight * x_k + w.linear_0_bias;
 
-    %% ----- Linear Output Layer -----------------------------------------
-    % Simple affine transformation of the hidden activation:
-    %
-    %   x_k_plus_1 = W_out * h_k + b_out
-    x_k_plus_1 = w.weight_linout * h_k + w.bias_linout';
+    % h_0 = tanh(a_0)
+    h0 = tanh(a0);
+
+    %% ----- Output Layer ------------------------------------------------
+    % y = W1*h + b1
+    y_k = w.linear_1_weight * h0 + w.linear_1_bias;
 
 end

@@ -1,9 +1,6 @@
 function [x_k_plus_1, h_k] = nn_gru_1_layer(x_k, h_k_minus_1, gru_weights)
 % Computes the forward pass of a single-layer GRU network using only
-% matrix operations. This function is intended for use with trained GRU
-% weights exported from Python (PyTorch, TensorFlow, etc.) and offers a
-% transparent, toolbox-free implementation suitable for MPC, system
-% identification, or low-level understanding of recurrent networks.
+% matrix operations.
 %
 % INPUTS:
 %   x_k           : Input at time step k  [input_dim, 1]
@@ -36,22 +33,19 @@ function [x_k_plus_1, h_k] = nn_gru_1_layer(x_k, h_k_minus_1, gru_weights)
     h_prev = h_k_minus_1;  % Previous hidden state
 
     %% ----- Reset Gate (r_k) --------------------------------------------
-    r_k = sigmoid( w.w_ir_l0 * x_k + w.b_ir_l0' + w.w_hr_l0 * h_prev + w.b_hr_l0' );
+    r_k = sigmoid( w.w_ir_l0 * x_k + w.b_ir_l0 + w.w_hr_l0 * h_prev + w.b_hr_l0 );
 
     %% ----- Update Gate (z_k) -------------------------------------------
-    z_k = sigmoid( w.w_iz_l0 * x_k + w.b_iz_l0' + w.w_hz_l0 * h_prev + w.b_hz_l0' );
+    z_k = sigmoid( w.w_iz_l0 * x_k + w.b_iz_l0 + w.w_hz_l0 * h_prev + w.b_hz_l0 );
 
     %% ----- New Gate (n_k) ----------------------------------------------
-    % The reset gate modulates the influence of the past hidden state.
-    n_k = tanh( w.w_in_l0 * x_k + w.b_in_l0' + r_k .* ( w.w_hn_l0 * h_prev + w.b_hn_l0' ) );
+    n_k = tanh( w.w_in_l0 * x_k + w.b_in_l0 + r_k .* ( w.w_hn_l0 * h_prev + w.b_hn_l0 ) );
 
     %% ----- Hidden State Update -----------------------------------------
-    % Interpolation between old and new hidden state:
-    %   h_k = (1 - z_k) ⊙ n_k + z_k ⊙ h_prev
     h_k = (1 - z_k) .* n_k + z_k .* h_prev;
 
     %% ----- Linear Output Layer -----------------------------------------
-    x_k_plus_1 = w.weight_linout * h_k + w.bias_linout';
+    x_k_plus_1 = w.weight_linout * h_k + w.bias_linout;
 
 end
 
